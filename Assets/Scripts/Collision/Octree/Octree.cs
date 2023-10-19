@@ -30,9 +30,16 @@ public interface Octree
     /// <returns>The newly created Octree</returns>
     public static Octree Create(Vector3 pos, float halfWidth = 1f, uint depth = 1)
     {
-        // TODO: YOUR CODE HERE!
-        // Recursively call Create to initialize the Octree
-        return null;
+        if (depth == 0)
+        {
+            return new OctreeObjects();
+        }
+
+        return new OctreeNode(pos, new []
+        {Create(pos, halfWidth, depth-1), Create(pos, halfWidth, depth-1),
+            Create(pos, halfWidth, depth-1), Create(pos, halfWidth, depth-1),
+            Create(pos, halfWidth, depth-1), Create(pos, halfWidth, depth-1),
+            Create(pos, halfWidth, depth-1), Create(pos, halfWidth, depth-1)});
     }
 }
 
@@ -44,7 +51,11 @@ public class OctreeNode : Octree
     public Vector3 position;
     public Octree[] children;
 
-    // TODO: YOUR CODE HERE
+    public OctreeNode(Vector3 position, Octree[] children)
+    {
+        this.position = position;
+        this.children = children;
+    }
 
     /// <summary>
     /// Inserts the given particle into the appropriate children. The particle
@@ -60,6 +71,10 @@ public class OctreeNode : Octree
     /// </summary>
     public void ResolveCollisions()
     {
+        for (int i = 0; i < children.Length-1; i++)
+        {
+            children[i].ResolveCollisions();
+        }
     }
 
     /// <summary>
@@ -101,6 +116,7 @@ public class OctreeObjects : Octree
     /// </summary>
     public void ResolveCollisions()
     {
+        
     }
 
     /// <summary>
