@@ -36,10 +36,14 @@ public interface Octree
         }
 
         return new OctreeNode(pos, new []
-        {Create(pos, halfWidth, depth-1), Create(pos, halfWidth, depth-1),
-            Create(pos, halfWidth, depth-1), Create(pos, halfWidth, depth-1),
-            Create(pos, halfWidth, depth-1), Create(pos, halfWidth, depth-1),
-            Create(pos, halfWidth, depth-1), Create(pos, halfWidth, depth-1)});
+        {   Create(pos + Vector3.left  * halfWidth + Vector3.down * halfWidth + Vector3.back    * halfWidth, halfWidth/2, depth-1), 
+            Create(pos + Vector3.right * halfWidth + Vector3.down * halfWidth + Vector3.back    * halfWidth, halfWidth/2, depth-1),
+            Create(pos + Vector3.left  * halfWidth + Vector3.up   * halfWidth + Vector3.back    * halfWidth, halfWidth/2, depth-1), 
+            Create(pos + Vector3.right * halfWidth + Vector3.up   * halfWidth + Vector3.back    * halfWidth, halfWidth/2, depth-1),
+            Create(pos + Vector3.left  * halfWidth + Vector3.down * halfWidth + Vector3.forward * halfWidth, halfWidth/2, depth-1), 
+            Create(pos + Vector3.right * halfWidth + Vector3.down * halfWidth + Vector3.forward * halfWidth, halfWidth/2, depth-1),
+            Create(pos + Vector3.left  * halfWidth + Vector3.up   * halfWidth + Vector3.forward * halfWidth, halfWidth/2, depth-1), 
+            Create(pos + Vector3.right * halfWidth + Vector3.up   * halfWidth + Vector3.forward * halfWidth, halfWidth/2, depth-1)});
     }
 }
 
@@ -51,6 +55,11 @@ public class OctreeNode : Octree
     public Vector3 position;
     public Octree[] children;
 
+    public OctreeNode()
+    {
+        position = Vector3.zero;
+        children = new OctreeObjects[8];
+    }
     public OctreeNode(Vector3 position, Octree[] children)
     {
         this.position = position;
@@ -64,6 +73,18 @@ public class OctreeNode : Octree
     /// <param name="sphere">The bounding sphere of the particle to insert.</param>
     public void Insert(Sphere sphere)
     {
+        int i = 0;
+        var vecDiff = sphere.position - position;
+        if (vecDiff.x > 0) i += 1;
+        if (vecDiff.y > 0) i += 2;
+        if (vecDiff.z > 0) i += 4;
+        children[i].Insert(sphere);
+        if (vecDiff.sqrMagnitude < sphere.Radius * sphere.Radius)
+        {
+            if (vecDiff.x < sphere.Radius) ; //add to whatever index that guy is;
+            //same for y
+            //same for z
+        }
     }
 
     /// <summary>
@@ -82,6 +103,10 @@ public class OctreeNode : Octree
     /// </summary>
     public void Clear()
     {
+        foreach (var obj in children)
+        {
+            obj.Clear();
+        }
     }
 }
 
@@ -90,16 +115,20 @@ public class OctreeNode : Octree
 /// </summary>
 public class OctreeObjects : Octree
 {
+    private List<Sphere> children;
+    
     public ICollection<Sphere> Objects
     {
         get
         {
-            // TODO: YOUR CODE HERE!
-            return null;
+            return children;
         }
     }
 
-    // TODO: YOUR CODE HERE!
+    public OctreeObjects()
+    {
+        
+    }
 
     /// <summary>
     /// Inserts the particle into this node. It will be compared with all other
@@ -108,6 +137,7 @@ public class OctreeObjects : Octree
     /// <param name="particle">The particle to insert.</param>
     public void Insert(Sphere particle)
     {
+        
     }
 
     /// <summary>
@@ -116,7 +146,15 @@ public class OctreeObjects : Octree
     /// </summary>
     public void ResolveCollisions()
     {
-        
+        for (int i = 0; i < spheres.Length; i++)
+        {
+            Sphere s1 = spheres[i];
+            for (int j = i + 1; j < spheres.Length; j++)
+            {
+                Sphere s2 = spheres[j];
+                ApplyCollisionResolution(s1, s2);
+            }
+        }
     }
 
     /// <summary>
@@ -124,5 +162,6 @@ public class OctreeObjects : Octree
     /// </summary>
     public void Clear()
     {
+        Objects.Clear();
     }
 }
