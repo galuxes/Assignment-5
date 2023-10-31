@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using static CollisionDetection;
 using System;
 
 public interface Octree
@@ -36,14 +37,14 @@ public interface Octree
         }
 
         return new OctreeNode(pos, new []
-        {   Create(pos + Vector3.left  * halfWidth + Vector3.down * halfWidth + Vector3.back    * halfWidth, halfWidth/2, depth-1), 
-            Create(pos + Vector3.right * halfWidth + Vector3.down * halfWidth + Vector3.back    * halfWidth, halfWidth/2, depth-1),
-            Create(pos + Vector3.left  * halfWidth + Vector3.up   * halfWidth + Vector3.back    * halfWidth, halfWidth/2, depth-1), 
-            Create(pos + Vector3.right * halfWidth + Vector3.up   * halfWidth + Vector3.back    * halfWidth, halfWidth/2, depth-1),
-            Create(pos + Vector3.left  * halfWidth + Vector3.down * halfWidth + Vector3.forward * halfWidth, halfWidth/2, depth-1), 
-            Create(pos + Vector3.right * halfWidth + Vector3.down * halfWidth + Vector3.forward * halfWidth, halfWidth/2, depth-1),
-            Create(pos + Vector3.left  * halfWidth + Vector3.up   * halfWidth + Vector3.forward * halfWidth, halfWidth/2, depth-1), 
-            Create(pos + Vector3.right * halfWidth + Vector3.up   * halfWidth + Vector3.forward * halfWidth, halfWidth/2, depth-1)});
+        {   Create(pos + Vector3.left  * halfWidth/2 + Vector3.down * halfWidth/2 + Vector3.back    * halfWidth/2, halfWidth/2, depth-1), 
+            Create(pos + Vector3.right * halfWidth/2 + Vector3.down * halfWidth/2 + Vector3.back    * halfWidth/2, halfWidth/2, depth-1),
+            Create(pos + Vector3.left  * halfWidth/2 + Vector3.up   * halfWidth/2 + Vector3.back    * halfWidth/2, halfWidth/2, depth-1), 
+            Create(pos + Vector3.right * halfWidth/2 + Vector3.up   * halfWidth/2 + Vector3.back    * halfWidth/2, halfWidth/2, depth-1),
+            Create(pos + Vector3.left  * halfWidth/2 + Vector3.down * halfWidth/2 + Vector3.forward * halfWidth/2, halfWidth/2, depth-1), 
+            Create(pos + Vector3.right * halfWidth/2 + Vector3.down * halfWidth/2 + Vector3.forward * halfWidth/2, halfWidth/2, depth-1),
+            Create(pos + Vector3.left  * halfWidth/2 + Vector3.up   * halfWidth/2 + Vector3.forward * halfWidth/2, halfWidth/2, depth-1), 
+            Create(pos + Vector3.right * halfWidth/2 + Vector3.up   * halfWidth/2 + Vector3.forward * halfWidth/2, halfWidth/2, depth-1)});
     }
 }
 
@@ -73,18 +74,65 @@ public class OctreeNode : Octree
     /// <param name="sphere">The bounding sphere of the particle to insert.</param>
     public void Insert(Sphere sphere)
     {
-        int i = 0;
         var vecDiff = sphere.position - position;
-        if (vecDiff.x > 0) i += 1;
-        if (vecDiff.y > 0) i += 2;
-        if (vecDiff.z > 0) i += 4;
+        bool xPos = vecDiff.x > 0;
+        bool yPos = vecDiff.y > 0;
+        bool zPos = vecDiff.z > 0;
+        
+        if(vecDiff is { x: <= 0, y: <= 0, z: <= 0 }) children[0].Insert(sphere);
+        if(vecDiff is { x: >= 0, y: <= 0, z: <= 0 }) children[1].Insert(sphere);
+        if(vecDiff is { x: <= 0, y: >= 0, z: <= 0 }) children[2].Insert(sphere);
+        if(vecDiff is { x: >= 0, y: >= 0, z: <= 0 }) children[3].Insert(sphere);
+        if(vecDiff is { x: <= 0, y: <= 0, z: >= 0 }) children[4].Insert(sphere);
+        if(vecDiff is { x: >= 0, y: <= 0, z: >= 0 }) children[5].Insert(sphere);
+        if(vecDiff is { x: <= 0, y: >= 0, z: >= 0 }) children[6].Insert(sphere);
+        if(vecDiff is { x: >= 0, y: >= 0, z: >= 0 }) children[7].Insert(sphere);
+
+
+        /*int i = 0;
+        var vecDiff = sphere.position - position;
+        if (vecDiff.x >= 0) i += 1;
+        if (vecDiff.y >= 0) i += 2;
+        if (vecDiff.z >= 0) i += 4;
         children[i].Insert(sphere);
         if (vecDiff.sqrMagnitude < sphere.Radius * sphere.Radius)
         {
-            if (vecDiff.x < sphere.Radius) ; //add to whatever index that guy is;
-            //same for y
-            //same for z
-        }
+            if (Mathf.Abs(vecDiff.x) < sphere.Radius)
+            {
+                if (vecDiff.x >= 0)
+                {
+                    children[i-1].Insert(sphere);
+                }
+                else
+                {
+                    children[i+1].Insert(sphere);
+                }
+            }
+
+            if (Mathf.Abs(vecDiff.y) < sphere.Radius)
+            {
+                if (vecDiff.y >= 0)
+                {
+                    children[i-2].Insert(sphere);
+                }
+                else
+                {
+                    children[i+2].Insert(sphere);
+                }
+            }
+
+            if (Mathf.Abs(vecDiff.z) < sphere.Radius)
+            {
+                if (vecDiff.z >= 0)
+                {
+                    children[i-4].Insert(sphere);
+                }
+                else
+                {
+                    children[i+4].Insert(sphere);
+                }
+            }
+        }*/
     }
 
     /// <summary>
@@ -92,9 +140,9 @@ public class OctreeNode : Octree
     /// </summary>
     public void ResolveCollisions()
     {
-        for (int i = 0; i < children.Length-1; i++)
+        foreach (var child in children)
         {
-            children[i].ResolveCollisions();
+           child.ResolveCollisions();
         }
     }
 
@@ -115,7 +163,7 @@ public class OctreeNode : Octree
 /// </summary>
 public class OctreeObjects : Octree
 {
-    private List<Sphere> children;
+    private List<Sphere> children = new List<Sphere>();
     
     public ICollection<Sphere> Objects
     {
@@ -137,7 +185,7 @@ public class OctreeObjects : Octree
     /// <param name="particle">The particle to insert.</param>
     public void Insert(Sphere particle)
     {
-        
+        children.Add(particle);
     }
 
     /// <summary>
@@ -146,13 +194,11 @@ public class OctreeObjects : Octree
     /// </summary>
     public void ResolveCollisions()
     {
-        for (int i = 0; i < spheres.Length; i++)
+        foreach (var s1 in children)
         {
-            Sphere s1 = spheres[i];
-            for (int j = i + 1; j < spheres.Length; j++)
+            foreach (var s2 in children)
             {
-                Sphere s2 = spheres[j];
-                ApplyCollisionResolution(s1, s2);
+                if(s1 != s2) ApplyCollisionResolution(s1, s2);
             }
         }
     }
